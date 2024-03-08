@@ -65,29 +65,30 @@ const HomePage = () => {
     },
   ]
 
-  //get all transactions
-  //useEffect hook
+  //to fetch all transactions
+  const getAllTransactions = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      setLoading(true);                                                         //Show spinner
+      const res = await axios.post("/transactions/get-transaction", {
+        userid: user._id,
+        frequency,
+        selectedDate,
+        type,
+      });
+      setLoading(false);                                                         //Set loading to false when we get a response
+      setAllTransaction(res.data);                                               //Update transactions data
+      console.log(res.data);
+    } catch (error) {
+      console.log(error);
+      message.error("Fetch issue with transaction");
+    }
+  };
+
+  // useEffect hook to fetch transactions initially
   useEffect(() => {
-    const getAllTransactions = async () => {
-      try {
-        const user = JSON.parse(localStorage.getItem("user"));
-        setLoading(true);                                                           //show spinner
-        const res = await axios.post("/transactions/get-transaction", {
-          userid: user._id,
-          frequency,
-          selectedDate,
-          type,
-        });
-        setLoading(false);                                      //do setLoading false when we get response
-        setAllTransaction(res.data);                            //to store transactions
-        console.log(res.data);
-      } catch (error) {
-        console.log(error);
-        message.error("Fetch issue with transaction");
-      }
-    };
     getAllTransactions();
-  }, [frequency, selectedDate, type, setAllTransaction])
+  }, [frequency, selectedDate, type]);                                          //Call the effect whenever these values change
 
   //delete handler
   const handleDelete = async (record) => {
@@ -98,6 +99,7 @@ const HomePage = () => {
       });
       setLoading(false);
       message.success("Transaction Deleted!");
+      getAllTransactions();                                                     //After successful deletion, fetch all transactions again
     } catch (error) {
       setLoading(false);
       console.log(error);
@@ -120,6 +122,7 @@ const HomePage = () => {
         });
         setLoading(false);
         message.success("Transaction Updated Successfully");
+        getAllTransactions();
       } else {
         await axios.post("/transactions/add-transaction", {
           ...values,                                               //spread values means pass all data of form
@@ -127,6 +130,7 @@ const HomePage = () => {
         });
         setLoading(false);
         message.success("Transaction Added Successfully");          //message we get form antdesign
+        getAllTransactions();
       }
       setShowModal(false)
       setEditable(null)
@@ -253,8 +257,9 @@ const HomePage = () => {
     </Layout>
   )
 }
-
 export default HomePage
 
-
 //content inside layout works as a child
+
+
+
