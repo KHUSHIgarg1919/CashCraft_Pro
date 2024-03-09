@@ -1,15 +1,28 @@
 const userModel = require("../models/userModel");
 
-// login callback
+const bcrypt = require('bcrypt');
+
 const loginController = async (req, res) => {
-  console.log("Hello"); 
   try {
     const { email, password } = req.body;
-    const user = await userModel.findOne({ email, password });
+    
+    
+    // Retrieve the user from the database based on the provided email
+    const user = await userModel.findOne({ email });
+
     if (!user) {
-      return res.status(404).send("User Not Found");                   //error response
+      return res.status(404).send("User Not Found");
     }
-    res.status(200).json({                                            //okk request
+
+    // Compare the hashed password stored in the database with the password provided in the request
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
+      return res.status(401).send("Incorrect Password");
+    }
+
+    // If passwords match, the user is authenticated
+    res.status(200).json({
       success: true,
       user,
     });
@@ -21,11 +34,24 @@ const loginController = async (req, res) => {
   }
 };
 
-//Register Callback
 const registerController = async (req, res) => {
   try {
-    const newUser = new userModel(req.body);
+    const { name, email, password } = req.body;
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create a new user instance with the hashed password
+    const newUser = new userModel({
+      name,
+      email,
+      password: hashedPassword, // Store the hashed password in the database
+    });
+
+    // Save the user to the database
     await newUser.save();
+
+    // Respond with a success message
     res.status(201).json({
       success: true,
       newUser,
